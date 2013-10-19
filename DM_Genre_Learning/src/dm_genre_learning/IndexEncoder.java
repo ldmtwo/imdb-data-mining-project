@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.collections4.bag.HashBag;
@@ -371,11 +372,12 @@ public class IndexEncoder {
         int count = 0;
         String line;
         BufferedWriter br = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output)));
-        Movie[] mset=movies.keySet().toArray(new Movie[0]);
+        
+        LinkedList<Movie> mset=new LinkedList(movies.keySet());
         Movie m;int i;
         while(limit > count && ret.size()<limit) {
-            i=(int)(Math.random()*mset.length);
-            m=mset[i];
+            i=(int)(Math.random()*mset.size());
+            m=mset.remove(i);
             if(m==null)continue;
             if ( isValidMovie(m)) {
                 ret.put(m, m);
@@ -383,11 +385,10 @@ public class IndexEncoder {
                         m.title, m.year, m.genre, m.keyword, m.plot);
                 br.write(line);
                 count++;
-                if (limit <= count) {
+            }
+                if (limit <= count||mset.size()<1) {
                     break;
                 }
-            }
-            mset[i]=null;
         }
         br.close();
         err += String.format("count=" + count);
@@ -410,7 +411,7 @@ public class IndexEncoder {
     }
 
     private static boolean isValidMovie(Movie m) {
-        return m.keyword.size() > 0 && m.plot.size() > 0 && m.year > 1800 && m.year < 2013 && m.db_cnt > 3
+        return m.keyword.size() > 0 &&m.genre.size() > 0 && m.plot.size() > 0 && m.year > 1800 && m.year < 2013 && m.db_cnt > 3
 //                && !(m.genre.contains(Genre.Adult) || m.genre.contains(Genre.Game_Show)
 //                || m.genre.contains(Genre.UNKNOWN) || m.genre.contains(Genre.Talk_Show) || m.genre.contains(Genre.Reality_TV)
 //                || m.genre.contains(Genre.Experimental) || m.genre.contains(Genre.Lifestyle) 
