@@ -10,7 +10,7 @@ import java.util.Arrays;
  *
  * @author ldtwo
  */
-public class M {
+public class Metric {
 /*
  This weight measure is analogous to the attraction of two molecules.
  * Small molecules have little pull. 
