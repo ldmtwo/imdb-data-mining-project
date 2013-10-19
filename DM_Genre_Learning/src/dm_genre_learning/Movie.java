@@ -82,15 +82,17 @@ public class Movie implements java.io.Serializable {
             GLOB_genre.add(gtemp);
             return this.genre.add(gtemp);
         } catch (Exception e) {
+            
 //            try {
-            GLOB_genre.add(Genre.valueOf(g.replace("-", "_")));
-            return this.genre.add(Genre.valueOf(g.replace("-", "_")));
+//            GLOB_genre.add(Genre.valueOf(g.replace("-", "_")));
+//            return this.genre.add(Genre.valueOf(g.replace("-", "_")));
 //            } catch (Exception e2) {
 //                System.err.println("NOT FOUND: " +g);
 //            }
 //            e.printStackTrace();
 //            System.err.println(g);
         }
+        return false;
     }
 
     public void setKeyword(String k) {

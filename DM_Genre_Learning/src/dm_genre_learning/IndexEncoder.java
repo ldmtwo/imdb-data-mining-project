@@ -362,6 +362,37 @@ public class IndexEncoder {
         err += String.format("count=" + count);
 
         return ret;
+    }public static HashMap<Movie, Movie> rand_select(File output,  HashMap<Movie, Movie> movies, int limit) throws Exception {
+        String err = "UNKNOWN";
+        if (output.exists()) {
+            err = "EXISTS==>" + output;
+        }
+        HashMap<Movie, Movie> ret=new HashMap<Movie, Movie>();
+        int count = 0;
+        String line;
+        BufferedWriter br = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output)));
+        Movie[] mset=movies.keySet().toArray(new Movie[0]);
+        Movie m;int i;
+        while(limit > count && ret.size()<limit) {
+            i=(int)(Math.random()*mset.length);
+            m=mset[i];
+            if(m==null)continue;
+            if ( isValidMovie(m)) {
+                ret.put(m, m);
+                line = String.format("%s,%s,%s,%s,%s\n".replace("%s", "\"%s\""),
+                        m.title, m.year, m.genre, m.keyword, m.plot);
+                br.write(line);
+                count++;
+                if (limit <= count) {
+                    break;
+                }
+            }
+            mset[i]=null;
+        }
+        br.close();
+        err += String.format("count=" + count);
+
+        return ret;
     }
 
     public static int size(Genre genre, HashMap<Movie, Movie> movies, int limit) throws Exception {
@@ -380,10 +411,12 @@ public class IndexEncoder {
 
     private static boolean isValidMovie(Movie m) {
         return m.keyword.size() > 0 && m.plot.size() > 0 && m.year > 1800 && m.year < 2013 && m.db_cnt > 3
-                && !(m.genre.contains(Genre.Adult) || m.genre.contains(Genre.Game_Show)
-                || m.genre.contains(Genre.UNKNOWN) || m.genre.contains(Genre.Talk_Show) || m.genre.contains(Genre.Reality_TV)
-                || m.genre.contains(Genre.Experimental) || m.genre.contains(Genre.Lifestyle) 
-                || m.keyword.contains("sex") || m.keyword.contains("orgasm"));
+//                && !(m.genre.contains(Genre.Adult) || m.genre.contains(Genre.Game_Show)
+//                || m.genre.contains(Genre.UNKNOWN) || m.genre.contains(Genre.Talk_Show) || m.genre.contains(Genre.Reality_TV)
+//                || m.genre.contains(Genre.Experimental) || m.genre.contains(Genre.Lifestyle) 
+//                || m.keyword.contains("sex") || m.keyword.contains("orgasm")
+//                )
+                ;
     }
 
     public static <E> String writeHistogram(File output, HashBag<E> bag, int limit) throws Exception {

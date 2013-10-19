@@ -19,8 +19,10 @@ import org.apache.commons.collections4.bag.HashBag;
  */
 public class Main {
 
-    static File[] in = {new File("d:\\movies.list"), new File("d:\\genres.list"), new File("d:\\keywords.list"), new File("d:\\plot.list")};
-
+   
+    final static String path="C:\\Users\\Larry\\Desktop\\Data mining class\\";
+       static File[] in = {new File(path+"movies.list"), new File(path+"genres.list"), 
+           new File(path+"keywords.list"), new File(path+"plot.list")};
     /**
      * @param args the command line arguments
      */
