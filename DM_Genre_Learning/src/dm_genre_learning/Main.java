@@ -81,7 +81,7 @@ public class Main {
         System.out.printf("---------------\nFILTERED Movies: %s\n", movies.size());
         int k;
         String strg = ((genre != null) ? "given%" + (""+genre).toUpperCase() + "_" : "");
-        for (int limit = 1000; limit <= 1000000; limit *= 100) {
+        for (int limit = 100; limit <= 1000000; limit *= 100) {
             for (Genre g : Genre.values()) {
                 k = IndexEncoder.size(g, movies, limit);
                 System.out.printf("---------------\nPrinting movies for %s: %s\n", g, k);
