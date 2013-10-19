@@ -27,23 +27,26 @@ public class Main {
     public static void main(String[] args) throws Exception {
         encodeGivenGenre(null);
         for (Genre g : Genre.values()) {
+            if(Movie.GLOB_genre.getCount(g)>0)
             encodeGivenGenre(g);
         }
     }
 
     static public void encodeGivenGenre(Genre genre) throws Exception {
         File out = new File(in[0].getAbsolutePath() + ".enc");
-        String folderPath=in[0].getParent()+genre+"\\";
-        if(genre==null)folderPath=in[0].getParent()+"ALL\\";
-        new File(folderPath).mkdir();
+        String folderPath = in[0].getParent() + genre + "\\";
+        if (genre == null) {
+            folderPath = in[0].getParent() + "ALL\\";
+        }
         HashMap<Movie, Movie> movies = new HashMap<Movie, Movie>();
         long t0, t1;
 
         t0 = System.currentTimeMillis();
         String status = "";
-        try {System.out.printf("LOADING...\n");
+        try {
             FileInputStream fis = new FileInputStream("d:\\movies.ser");
             ObjectInputStream ois = new ObjectInputStream(fis);
+            System.out.printf("LOADING...\n");
             movies = (HashMap<Movie, Movie>) ois.readObject();
             ois.close();
             fis.close();
@@ -70,7 +73,6 @@ public class Main {
 
         }
 
-
         System.out.printf("---------------\nMovies: %s\n", movies.size());
 
         IndexEncoder.filter(movies, 0);
@@ -80,7 +82,8 @@ public class Main {
         }
         System.out.printf("---------------\nFILTERED Movies: %s\n", movies.size());
         int k;
-        String strg = ((genre != null) ? "given%" + (""+genre).toUpperCase() + "_" : "");
+        new File(folderPath).mkdir();
+        String strg = ((genre != null) ? "given%" + ("" + genre).toUpperCase() + "_" : "");
         for (int limit = 100; limit <= 1000000; limit *= 100) {
             for (Genre g : Genre.values()) {
                 k = IndexEncoder.size(g, movies, limit);
@@ -104,7 +107,9 @@ public class Main {
             System.out.printf("---------------\nPrinting stats for %s: %s\n", type, k);
             out = new File(folderPath + "_FREQENCIES_" + type + "_limit=" + k + ".csv");
             IndexEncoder.writeHistogram(out, b, limit);
-            if(k!=limit)break;
+            if (k != limit) {
+                break;
+            }
         }
     }
 }

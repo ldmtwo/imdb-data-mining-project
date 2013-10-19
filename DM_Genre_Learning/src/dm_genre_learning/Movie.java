@@ -4,6 +4,7 @@
  */
 package dm_genre_learning;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import org.apache.commons.collections4.bag.HashBag;
@@ -29,9 +30,7 @@ public class Movie implements java.io.Serializable {
 
     static {
         String[] bad_ = "a,of,the,for,to,be,an,if,s,i,will,am,PL,,in,and,is,are,or,on,it,be,so".split(",");
-        for (String s : bad_) {
-            bad.add(s);
-        }
+        bad.addAll(Arrays.asList(bad_));
     }
 
     public static void rebuildGLOB(HashMap<Movie, Movie> movies) {
