@@ -4,6 +4,7 @@
  */
 package dm_genre_learning;
 
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -22,8 +23,8 @@ public class Metric {
  * Weights are also like temperature in Celcius. -inf to +inf scale
  */
     public static double[] genw;
-    final static double b = 2.3;
-    final static double r = 1.1;
+     static double b = 19;//importance of higher certainty, more distinctiveness
+     static double r = 4.5;//importance of higher frequency aka more evidence
     static int[] f = {};
     static double[] c = {};
     static double cmean = 0;//mean
@@ -67,29 +68,12 @@ public class Metric {
         }
     }
 
-    public static void C() {
-        cmean=0;
-        for (int i = 0; i < f.length; i++) {
-            c[i] = ((f[i] - u) / u ) ;
-            cmean+=c[i];
-        }
-    }
-
-    public static void W() {
-        double h;
-        for (int i = 0; i < f.length; i++) {
-            h = a * (c[i] - cmean);
-            w[i] = h*(1+Math.pow(r, h));
-            //w[i] = genw[i]*h*(1+Math.pow(r, h));
-        }
-    }
-//        public static void C() {
+//    public static void C() {
 //        cmean=0;
 //        for (int i = 0; i < f.length; i++) {
-//            c[i] = ((f[i] - u) / u + 1) / 3;
+//            c[i] = ((f[i] - u) / u ) ;
 //            cmean+=c[i];
 //        }
-//        cmean=cmean/f.length;
 //    }
 //
 //    public static void W() {
@@ -100,12 +84,50 @@ public class Metric {
 //            //w[i] = genw[i]*h*(1+Math.pow(r, h));
 //        }
 //    }
+        public static void C() {
+        cmean=0;
+        for (int i = 0; i < f.length; i++) {
+            c[i] = ((f[i] - u) / u + 9) / 3;
+            cmean+=c[i];
+        }
+        cmean=cmean/f.length;
+    }
+final static double t=0.9999;
+    public static void W() {
+        double h;
+        for (int i = 0; i < f.length; i++) {
+            h = a * (c[i] - cmean);
+            //w[i] = h*(1+Math.pow(r, h));
+            w[i] = h*(1+Math.pow(r, h))/Math.pow(genw[i],2);
+            if(w[i]>0)w[i]=(1-t)*w[i]+t*Math.log(w[i]);
+            else w[i]=0;
+        }
+    }
 
     public static void main(String[] args) throws Exception {
-        int[][] x={{0,0,1},{0,0,10},{0,0,100},{10,10,10},{400,400,400},{3,4,5},{30,40,50},{300,400,500}};
+        genw=new double[]{1,1,1};
+        DecimalFormat df = new DecimalFormat("0.0");
+        int[][] x={
+//            {0,0,1},{0,0,10},
+            //{10,10,10},{400,400,400},{3,4,5},{30,40,50},{300,400,500},
+//            {0,0,5},{0,0,50},{0,0,500},
+            {0,0,5000},
+            //{1,2,3},{11,12,13},{101,102,103},
+//            {0,200,200},{50,200,200},{100,200,200},
+            {2400, 6300,4000}};
+        double[] B={200,50,8};
+        double[] R={50,10,1,0.5,0.01};
+        for(double i:B)for(double j:R){
+        System.out.println(Metric.toStr());
+            b=i;r=j;
+            printTest(x);     
+        }
+    }
+
+    private static void printTest(int[][] x) {
+        System.out.println(Metric.toStr());
         for(int i=0;i<x.length;i++){
-            System.out.printf("%s\n\t%s\n\n", Arrays.toString(x[i]),Arrays.toString(calc(x[i])));
-            
+            System.out.printf("%s\n\t%s\n\n", Arrays.toString(x[i]),Arrays.toString(calc(x[i])));           
             
         }
     }
