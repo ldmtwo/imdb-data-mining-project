@@ -87,7 +87,7 @@ public class Metric {
         public static void C() {
         cmean=0;
         for (int i = 0; i < f.length; i++) {
-            c[i] = ((f[i] - u) / u + 9) / 3;
+            c[i] = ((f[i] - u) / u + 50);// / 3;
             cmean+=c[i];
         }
         cmean=cmean/f.length;
@@ -99,8 +99,8 @@ final static double t=0.9999;
             h = a * (c[i] - cmean);
             //w[i] = h*(1+Math.pow(r, h));
             w[i] = h*(1+Math.pow(r, h))/Math.pow(genw[i],2);
-            if(w[i]>0)w[i]=(1-t)*w[i]+t*Math.log(w[i]);
-            else w[i]=0;
+//            if(w[i]>0)w[i]=(1-t)*w[i]+t*Math.log(w[i]);
+//            else w[i]=0;
         }
     }
 

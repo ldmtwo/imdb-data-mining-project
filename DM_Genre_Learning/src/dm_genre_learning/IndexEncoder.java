@@ -377,6 +377,9 @@ public class IndexEncoder {
         Movie m;int i;
         while(limit > count && ret.size()<limit) {
             i=(int)(Math.random()*mset.size());
+                if (mset.size()<1) {
+                    break;
+                }
             m=mset.remove(i);
             if(m==null)continue;
             if ( isValidMovie(m)) {
