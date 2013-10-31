@@ -7,6 +7,7 @@ package dm_genre_learning;
 import static dm_genre_learning.Main.encodeGivenGenre;
 import static dm_genre_learning.Main.in;
 import static dm_genre_learning.Metric.b;
+import static dm_genre_learning.Movie.GLOB_genre_set;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -16,6 +17,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Set;
@@ -26,9 +30,11 @@ import org.apache.commons.collections4.bag.HashBag;
  * @author ldtwo
  */
 public class Matrix {
-static         int TP = 0, FP = 0, klen;
-static         double minFP = Integer.MAX_VALUE, maxTP = 0, lastFP = Integer.MAX_VALUE;
-static         double mi = 99999, mj = 9999;
+
+    static int TP = 0, FP = 0, klen;
+    static double minFP = Integer.MAX_VALUE, maxTP = 0, lastFP = Integer.MAX_VALUE;
+    static double mi = 99999, mj = 9999;
+
     private static void buildMovieList(File out, HashMap<Movie, Movie> movies, String serFile) throws Exception, IOException {
         String status;
         status = IndexEncoder.storeMovies(in[0], out, movies);
@@ -77,6 +83,7 @@ static         double mi = 99999, mj = 9999;
         }
         int gen_idx, key_idx;
         for (Movie m : movies.keySet()) {
+            GLOB_genre_set.add(m.genre);
             for (Genre g : m.genre) {
                 gen_idx = g2i.get(g);
                 for (String k : m.keyword) {
@@ -99,7 +106,7 @@ static         double mi = 99999, mj = 9999;
 //        System.out.printf("---------------\nWEIGHT: Finished in %s seconds!\n\n", (t1 - t0) / 1000);
 
     }
-    
+
     public static void learn_genreVsPlot(HashMap<Movie, Movie> movies) {
         long t1, t0 = System.currentTimeMillis();
 
@@ -152,7 +159,7 @@ static         double mi = 99999, mj = 9999;
 //        System.out.printf("---------------\nWEIGHT: Finished in %s seconds!\n\n", (t1 - t0) / 1000);
 
     }
-    
+
     final static String path = "d:\\";
     static File[] in = {new File(path + "movies.list"), new File(path + "genres.list"),
         new File(path + "keywords.list"), new File(path + "plot.list")};
@@ -173,11 +180,11 @@ static         double mi = 99999, mj = 9999;
         String[] sarr;
         long t0, t1;
         int limit = 1000;
-        int MIN = 10;
+        int MIN = 50;
         String status = "";
         String serFile = path + "movies.ser";
 
-        HashMap<Movie, Movie> train_movies,test_movies;
+        HashMap<Movie, Movie> train_movies, test_movies;
         HashMap<Movie, Movie> all_movies = new HashMap<Movie, Movie>();
         System.out.println(Metric.toStr());
         File out = new File(in[0].getAbsolutePath() + ".enc");
@@ -209,6 +216,7 @@ static         double mi = 99999, mj = 9999;
         System.out.printf("---------------\nFinished in %s seconds!\n\n", (t1 - t0) / 1000);
 
         System.out.printf("---------------\nMovies: %s\n", all_movies.size());
+
         IndexEncoder.filter(all_movies, 0);
         System.out.printf("---------------\nFILTERED Movies: %s\n", all_movies.size());
 
@@ -249,56 +257,63 @@ static         double mi = 99999, mj = 9999;
         }
         System.out.printf("---------------\nPlot (after): %s\n", Movie.GLOB_plot.size());
 
+        System.out.printf("---------------\nprinting ARFF\n");
+        out = new File(String.format("%simdb_size=%s_MIN=%s.arff", folderPath, limit, MIN));
+        printARFF(out, all_movies, limit);
         System.out.printf("---------------\nMovies(train): %s\n", train_movies.size());
 //        Movie.rebuildGLOB(movies2);
         //printMatrix(100, 100);
         /*
-        TODO: harmonic convergence 
-        B= +/-delta b + B, if better/worse
-        Db = Db*0.9
+         TODO: harmonic convergence 
+         B= +/-delta b + B, if better/worse
+         Db = Db*0.9
         
-        i=UBOUND
-        k=(UBOUND-LBOUND)
-        loop while k>minK
-            decrease by k
-            if too low
-                k=k*0.66
-                loop
-                    increase by k
-                    if too high
-                        break LOOP2
-        */
+         i=UBOUND
+         k=(UBOUND-LBOUND)
+         loop while k>minK
+         decrease by k
+         if too low
+         k=k*0.66
+         loop
+         increase by k
+         if too high
+         break LOOP2
+         */
 
         double[] B = {5000, 1000, 500, 100, 50, 10, 5, 1};
-        double[] R = {200,};double k;
-        double hi,lo;
-        minFP=Integer.MAX_VALUE;
-        for (double i = 1; i <500000; i = i*7) {
-            k=1000-0.0001;
-            innerConvergence2(25000,-1, i, train_movies, test_movies);
+        double[] R = {200,};
+        double k;
+        double hi, lo;
+        minFP = Integer.MAX_VALUE;
+        for (double i = 1; i < 90; i = i * 2) {
+            k = 1000 - 0.0001;
+            innerConvergence2(9, 0.0001, i, train_movies, test_movies);
 //            innerConvergence2(1000,50, i, train_movies, test_movies);
 //            innerConvergence2(50,-300, i, train_movies, test_movies);
         }
         TP = (int) maxTP;
-        FP=(int) minFP;
-                Metric.b = mi;
-                Metric.r = mj;
-                System.out.println(Metric.toStr());
+        FP = (int) minFP;
+        Metric.b = mi;
+        Metric.r = mj;
+        System.out.println(Metric.toStr());
         System.out.printf("TP=%4s\tFP=%4s\n", TP, FP);
         System.out.printf("TP=%s%%\tFP=%s%%\n\n", 100 * TP / (TP + FP), 100 * FP / (TP + FP));
     }
 
     private static void innerConvergence(double k, double i, HashMap<Movie, Movie> train_movies, HashMap<Movie, Movie> test_movies) {
-        double j = 0;double n=1;
+        double j = 0;
+        double n = 1;
         lastFP = Integer.MAX_VALUE;
         FP = Integer.MAX_VALUE - 1;
-        while (Math.abs(k)> 0.1) {
-            n=1;
+        while (Math.abs(k) > 0.1) {
+            n = 1;
             System.out.printf("+(i=%s, j=%s + %s, %s, %s), \t", (int) i, j, -k, FP, minFP);
-            for (j=Math.max(j, 0);FP-lastFP<0 ||(j>=-300 && n>0&&TP>0); j = j - k) {         
+            for (j = Math.max(j, 0); FP - lastFP < 0 || (j >= -300 && n > 0 && TP > 0); j = j - k) {
                 evaluate_plot(i, j, train_movies, test_movies);
-                System.out.printf("^(FP=%s + %s, j=%s + %s), ",lastFP, FP-lastFP, j,-k );
-                if(FP-lastFP>=0)break;
+                System.out.printf("^(FP=%s + %s, j=%s + %s), ", lastFP, FP - lastFP, j, -k);
+                if (FP - lastFP >= 0) {
+                    break;
+                }
             }
 //            k = k * 0.9;
 //            j = j - k;
@@ -311,18 +326,20 @@ static         double mi = 99999, mj = 9999;
 //            }
             j = j + k;
             evaluate_plot(i, j, train_movies, test_movies);
-        System.out.printf("\n\t");
-            k=-k;
-            n=1;
-            for (j=Math.max(j, 0);FP-lastFP<0 ||(j>=-300 && n>0&&TP>0); j = j - k) {                 
+            System.out.printf("\n\t");
+            k = -k;
+            n = 1;
+            for (j = Math.max(j, 0); FP - lastFP < 0 || (j >= -300 && n > 0 && TP > 0); j = j - k) {
                 evaluate_plot(i, j, train_movies, test_movies);
-                System.out.printf("*(FP=%s + %s, j=%s + %s), ",lastFP, FP-lastFP, j,-k );
-                if(FP-lastFP>=0)break;
+                System.out.printf("*(FP=%s + %s, j=%s + %s), ", lastFP, FP - lastFP, j, -k);
+                if (FP - lastFP >= 0) {
+                    break;
+                }
             }
             j = j + k;
             evaluate_plot(i, j, train_movies, test_movies);
-            k=-k*.1-0.8;
-            System.out.printf("&(FP=%s + %s, j=%s + %s)\n",lastFP, FP-lastFP, j,-k );
+            k = -k * .1 - 0.8;
+            System.out.printf("&(FP=%s + %s, j=%s + %s)\n", lastFP, FP - lastFP, j, -k);
             n--;
         }
         System.out.printf(".\n");
@@ -346,21 +363,22 @@ static         double mi = 99999, mj = 9999;
 //            }
     }
 
-    private static void innerConvergence2(double hi,double lo, double i, HashMap<Movie, Movie> train_movies, HashMap<Movie, Movie> test_movies) {
-        double j = 0;double n=1;
-        double mid,FPmid, FPhi=99999999,FPlo=88888888;
-        
+    private static void innerConvergence2(double hi, double lo, double i, HashMap<Movie, Movie> train_movies, HashMap<Movie, Movie> test_movies) {
+        double j = 0;
+        double n = 1;
+        double mid, FPmid, FPhi = 99999999, FPlo = 88888888;
+
         lastFP = Integer.MAX_VALUE;
         FP = Integer.MAX_VALUE - 1;
-        
-        FPmid=7777777;
+
+        FPmid = 7777777;
         System.out.printf("&[i=%s, %s , %s, min=%s]\t ", i, hi, lo, minFP);
         evaluate_plot(i, hi, train_movies, test_movies);
         FPhi = FP;
         evaluate_plot(i, lo, train_movies, test_movies);
         FPlo = FP;
-        while (hi - lo > 400 || !(FPhi==FPlo && FPmid==FPlo)) {
-            System.out.printf("^(FP=%s + %s, [%s + %s]), ", (int)lastFP, (int)(FP - lastFP), (int)hi, (int)(hi-lo));
+        while (hi - lo > 400 || !(FPhi == FPlo && FPmid == FPlo)) {
+            System.out.printf("^(FP=%s + %s, [%s + %s]), ", (int) lastFP, (int) (FP - lastFP), (int) hi, (int) (hi - lo));
             mid = (hi + lo) / 2;//Math.random()*(hi-lo)*0.99+lo;//
             evaluate_plot(i, mid, train_movies, test_movies);
             FPmid = FP;
@@ -401,8 +419,9 @@ static         double mi = 99999, mj = 9999;
 //  // key not found
 //  return KEY_NOT_FOUND;
 //}
-        
+
     }
+
     private static void evaluate_plot(double i, double j, HashMap<Movie, Movie> train_movies, HashMap<Movie, Movie> test_movies) {
         Metric.b = i;
         Metric.r = j;
@@ -429,7 +448,8 @@ static         double mi = 99999, mj = 9999;
     private static void testHypothesis_keyword(HashMap<Movie, Movie> movies) {
         DecimalFormat df = new DecimalFormat("0");
         double reg, regSum;
-         TP = 0; FP = 0;
+        TP = 0;
+        FP = 0;
         Set<Genre> gen = Movie.GLOB_genre.uniqueSet();
         int gen_idx, key_idx;
         Genre chosen = null;
@@ -473,8 +493,7 @@ static         double mi = 99999, mj = 9999;
                     for (String k : m.keyword) {
                         if (k2i.containsKey(k)) {
                             key_idx = k2i.get(k);
-                            if (weight[key_idx][gen_idx] > 0.5)
-                            {
+                            if (weight[key_idx][gen_idx] > 0.5) {
 //                                klen = Math.max(k.length(),8);
 //                                l1 += String.format(" kw(%" + klen + "s)|", k);
 //                                l2 += String.format(" w=%-" + klen + "s |", df.format(weight[key_idx][gen_idx])+",  f="+freq[key_idx][gen_idx]);
@@ -499,10 +518,12 @@ static         double mi = 99999, mj = 9999;
 //        System.out.printf("TP=%4s\tFP=%4s\n", TP, FP);
 //        System.out.printf("TP=%s%%\tFP=%s%%\n\n", 100 * TP / (TP + FP), 100 * FP / (TP + FP));
     }
+
     private static void testHypothesis(HashMap<Movie, Movie> movies) {
         DecimalFormat df = new DecimalFormat("0");
         double reg, regSum;
-         TP = 0; FP = 0;
+        TP = 0;
+        FP = 0;
         Set<Genre> gen = Movie.GLOB_genre.uniqueSet();
         int gen_idx, key_idx;
         Genre chosen = null;
@@ -535,14 +556,15 @@ static         double mi = 99999, mj = 9999;
             } else {
                 FP++;
             }
-            
+
         }
     }
 
     private static void testHypothesis_plot(HashMap<Movie, Movie> movies) {
         DecimalFormat df = new DecimalFormat("0");
         double reg, regSum;
-         TP = 0; FP = 0;
+        TP = 0;
+        FP = 0;
         Set<Genre> gen = Movie.GLOB_genre.uniqueSet();
         int gen_idx, plot_idx;
         Genre chosen = null;
@@ -586,8 +608,7 @@ static         double mi = 99999, mj = 9999;
                     for (String k : m.plot) {
                         if (p2i.containsKey(k)) {
                             plot_idx = p2i.get(k);
-                            if (weight[plot_idx][gen_idx] > 0.01)
-                            {
+                            if (weight[plot_idx][gen_idx] > 0.01) {
 //                                klen = Math.max(k.length(),8);
 //                                l1 += String.format(" kw(%" + klen + "s)|", k);
 //                                l2 += String.format(" w=%-" + klen + "s |", df.format(weight[key_idx][gen_idx])+",  f="+freq[key_idx][gen_idx]);
@@ -612,6 +633,7 @@ static         double mi = 99999, mj = 9999;
 //        System.out.printf("TP=%4s\tFP=%4s\n", TP, FP);
 //        System.out.printf("TP=%s%%\tFP=%s%%\n\n", 100 * TP / (TP + FP), 100 * FP / (TP + FP));
     }
+
     private static void printMatrix(int m, int n) {
         NumberFormat df = new DecimalFormat("##0.000");
         df.setMaximumFractionDigits(3);
@@ -642,5 +664,75 @@ static         double mi = 99999, mj = 9999;
         oo.writeObject(movies);
         oo.close();
         fileOut.close();
+    }
+
+    private static void printARFF(File out, HashMap<Movie, Movie> all_movies, int limit) {
+        StringBuilder sb = new StringBuilder(1000000);
+        HashMap<String, Integer> index = new HashMap<String, Integer>();
+        int i = 0;
+        String output = "";
+        output += String.format("%% %s\n", new Date());
+        output += String.format("%% Authors: \n");
+        output += String.format("@RELATION imdb \n");
+        Set<Set<Genre>> genreSet = Movie.GLOB_genre_set.uniqueSet();
+        System.out.printf("# global keys = %s\n", Movie.GLOB_keyword.size());
+        System.out.printf("# global genres = %s\n", Movie.GLOB_genre.size());
+        System.out.printf("# movies = %s\n", all_movies.size());
+        
+            output += String.format("@ATTRIBUTE genre {");
+        for (Set<Genre> s : genreSet) {
+//            index.put(s, i++);
+//            output += String.format("@ATTRIBUTE %s  {0,1}\n", s);
+            output += String.format("\"%s\", ", s.toString());
+        }
+//        output = output.substring(0, output.length() - 2);
+        output += String.format("}\n");
+        sb.append(output);
+        output = "";
+        for (String s : Movie.GLOB_keyword.uniqueSet()) {
+            if(!s.contains("\""))index.put(s, i++);
+
+            sb.append(String.format("@ATTRIBUTE \"%s\" {0,1} \n", s));
+        }
+        sb.append("@DATA\n");
+        Integer idx;
+        ArrayList<Integer> list = new ArrayList(100);
+        for (Movie m : all_movies.keySet()) {
+            sb.append("{");
+
+            sb.append(String.format("0 \"%s\", ", m.genre));
+//            for (Genre G : genreSet) {
+//                if (m.genre.contains(G)) {
+//                    sb.append(String.format("%s 1,", index.get(G.name())));
+//                }
+//            }
+            list.clear();
+            i = m.keyword.size();
+            for (String s : m.keyword) {
+                idx = index.get(s);
+                if (idx != null) {
+                    list.add(idx);
+                }
+            }
+            Collections.sort(list);
+            for (Integer s : list) {
+                sb.append(String.format("%s 1", s));
+                if (--i > 0) {
+                    sb.append(", ");
+                }
+            }
+            sb.append("}\n");
+            if (limit-- < 0) {
+                break;
+            }
+        }
+        try {
+            FileOutputStream os = new FileOutputStream(out);
+            os.write(sb.toString().getBytes());
+            os.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
     }
 }

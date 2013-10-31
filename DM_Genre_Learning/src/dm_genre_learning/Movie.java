@@ -7,6 +7,7 @@ package dm_genre_learning;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.collections4.bag.HashBag;
 
 /**
@@ -19,6 +20,7 @@ public class Movie implements java.io.Serializable {
     public int year;
     public static HashBag<Integer> GLOB_year = new HashBag<Integer>();
     public static HashBag<Genre> GLOB_genre = new HashBag<Genre>();
+    public static HashBag<Set<Genre>> GLOB_genre_set = new HashBag();
     public static HashBag<String> GLOB_title = new HashBag<String>();
     public static HashBag<String> GLOB_plot = new HashBag<String>();
     public static HashBag<String> GLOB_keyword = new HashBag<String>();
@@ -52,6 +54,7 @@ public class Movie implements java.io.Serializable {
                     }
                 }
             }
+            GLOB_genre_set.add(m.genre);
             GLOB_plot.addAll(m.plot);
             GLOB_keyword.addAll(m.keyword);
         }
