@@ -20,7 +20,7 @@ public class Movie implements java.io.Serializable {
     public int year;
     public static HashBag<Integer> GLOB_year = new HashBag<Integer>();
     public static HashBag<Genre> GLOB_genre = new HashBag<Genre>();
-    public static HashBag<Set<Genre>> GLOB_genre_set = new HashBag();
+    public static HashMap<Set<Genre>,String> GLOB_genre_set = new HashMap();
     public static HashBag<String> GLOB_title = new HashBag<String>();
     public static HashBag<String> GLOB_plot = new HashBag<String>();
     public static HashBag<String> GLOB_keyword = new HashBag<String>();
@@ -54,7 +54,7 @@ public class Movie implements java.io.Serializable {
                     }
                 }
             }
-            GLOB_genre_set.add(m.genre);
+            GLOB_genre_set.put(m.genre,m.genre.toString());
             GLOB_plot.addAll(m.plot);
             GLOB_keyword.addAll(m.keyword);
         }

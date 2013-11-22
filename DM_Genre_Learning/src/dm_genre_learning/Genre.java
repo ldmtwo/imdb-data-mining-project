@@ -10,12 +10,12 @@ package dm_genre_learning;
  */
 public enum Genre {
 
-    Comedy,
-    Action,
+//    Comedy,
+//    Action,
     Horror,
-    Adventure,
+//    Adventure,
     Fantasy,
-    Romance,
+//    Romance,
     
 //    Western,
 //    Drama,
