@@ -4,7 +4,6 @@
  */
 package dm_genre_learning;
 
-import static dm_genre_learning.Main.encodeGivenGenre;
 import static dm_genre_learning.Movie.GLOB_genre_set;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,23 +31,15 @@ public class Matrix {
     static int TP = 0, FP = 0, klen;
     static double minFP = Integer.MAX_VALUE, maxTP = 0, lastFP = Integer.MAX_VALUE;
     static double mi = 99999, mj = 9999;
-
-    private static void buildMovieList(File out, HashMap<Movie, Movie> movies, String serFile) throws Exception, IOException {
-        String status;
-        status = IndexEncoder.storeMovies(in[0], out, movies);
-        System.out.printf("Movies: %s\n", movies.size());
-        status += IndexEncoder.storeGenres(in[1], out, movies);
-        System.out.printf("Movies: %s\n", movies.size());
-        status += IndexEncoder.storeKeywords(in[2], out, movies);
-        System.out.printf("Movies: %s\n", movies.size());
-        status += IndexEncoder.storePlots(in[3], out, movies);
-        save_HashMapMovMov(serFile, movies);
-    }
     static HashMap<String, Integer> k2i = new HashMap<String, Integer>();
     static HashMap<String, Integer> p2i = new HashMap<String, Integer>();
     static EnumMap<Genre, Integer> g2i = new EnumMap<Genre, Integer>(Genre.class);
     static int[][] freq;
     static double[][] weight;
+
+    final static String path = "d:\\";
+    static File[] in = {new File(path + "movies.list"), new File(path + "genres.list"),
+        new File(path + "keywords.list"), new File(path + "plot.list")};
 
     static {
         int i = 0;
@@ -58,7 +49,31 @@ public class Matrix {
         Metric.genw = new double[i];
     }
 
-    public static void learn_genreVsKeyword(HashMap<Movie, Movie> movies) {
+    public static void buildMovieList(File out, HashMap<Movie, Movie> movies, String serFile) throws Exception, IOException {
+        String status;
+        
+        long t0=System.currentTimeMillis();
+        status = IndexEncoder.storeMovies(in[0], out, movies);
+        System.out.printf("\t %s ms\n", System.currentTimeMillis()-t0);
+        t0=System.currentTimeMillis();
+        System.out.printf("Movies: %s\n", movies.size());
+        status += IndexEncoder.storeGenres(in[1], out, movies);
+        System.out.printf("\t %s ms\n", System.currentTimeMillis()-t0);
+        t0=System.currentTimeMillis();
+        System.out.printf("Movies: %s\n", movies.size());
+        status += IndexEncoder.storeKeywords(in[2], out, movies);
+        System.out.printf("\t %s ms\n", System.currentTimeMillis()-t0);
+        t0=System.currentTimeMillis();
+        System.out.printf("Movies: %s\n", movies.size());
+        status += IndexEncoder.storePlots(in[3], out, movies);
+        System.out.printf("\t %s ms\n", System.currentTimeMillis()-t0);
+        t0=System.currentTimeMillis();
+        save_HashMapMovMov(serFile, movies);
+        System.out.printf("\t %s ms\n", System.currentTimeMillis()-t0);
+        t0=System.currentTimeMillis();
+    }
+
+    static public void learn_genreVsKeyword(HashMap<Movie, Movie> movies) {
         long t1, t0 = System.currentTimeMillis();
 
         Genre[] gen = Genre.values();
@@ -158,164 +173,7 @@ public class Matrix {
 
     }
 
-    final static String path = "d:\\";
-    static File[] in = {new File(path + "movies.list"), new File(path + "genres.list"),
-        new File(path + "keywords.list"), new File(path + "plot.list")};
-
-    /**
-     * @param args the command line arguments
-     * @throws java.lang.Exception
-     */
-    public static void main(String[] args) throws Exception {
-        run(null);
-//        for (Genre g : Genre.values()) {
-//            if(Movie.GLOB_genre.getCount(g)>0)
-//            encodeGivenGenre(g);
-//        }
-    }
-
-    static public void run(Genre genre) throws Exception {
-        Movie[] marr;
-        String[] sarr;
-        long t0, t1;
-        int cfgNum = 0;//0, 1, 2
-        int ARFFformat = 0;//0=single,1=paired, 2=grid
-        int[][] CFG = {{10000, 100}, {1000, 50}, {1000, 100}};
-        int limit = CFG[cfgNum][0];
-        int MIN = CFG[cfgNum][1];
-        String status = "";
-        String serFile = path + "movies.ser";
-
-        HashMap<Movie, Movie> train_movies, test_movies;
-        HashMap<Movie, Movie> all_movies = new HashMap<Movie, Movie>();
-        System.out.printf("cfg=%s, ARFFformat=%s\n", cfgNum, ARFFformat);
-        System.out.println(Metric.toStr());
-        File out = new File(in[0].getAbsolutePath() + ".enc");
-        String folderPath = in[0].getParent() + genre + "\\";
-        if (genre == null) {
-            folderPath = in[0].getParent() + "ALL\\";
-        }
-
-        t0 = System.currentTimeMillis();
-
-        try {
-            /*attempt to only load the data we need (reduced DB). If that fails, we need to build it.*/
-            train_movies = loadSerial_HashMapMovMov(path + "hmmm_" + limit + ".ser");
-            Movie.rebuildGLOB(train_movies);
-        } catch (Exception iOException) {
-
-        }
-        try {
-            /*attempt to only load the data we need (whole DB). If that fails, we need to build it.*/
-            all_movies = loadSerial_HashMapMovMov(serFile);
-        } catch (Exception exception) {
-            buildMovieList(out, all_movies, serFile);
-        } catch (java.lang.OutOfMemoryError e) {
-            System.err.printf("Heap: %s bytes\n", Runtime.getRuntime().totalMemory());
-            e.printStackTrace();
-        }
-//        limit=all_movies.size()/2;
-        t1 = System.currentTimeMillis();
-        System.out.printf("---------------\nFinished in %s seconds!\n\n", (t1 - t0) / 1000);
-
-        System.out.printf("---------------\nMovies: %s\n", all_movies.size());
-
-        IndexEncoder.filter(all_movies, 0);
-        System.out.printf("---------------\nFILTERED Movies: %s\n", all_movies.size());
-
-        new File(folderPath).mkdir();
-        System.out.printf("---------------\nPrinting movies: %s\n", limit);
-        out = new File(folderPath + "_limit=" + limit + ".csv");
-        train_movies = IndexEncoder.rand_select(out, all_movies, limit);
-//        for(Movie m: train_movies.keySet())all_movies.remove(m);
-        test_movies = all_movies;//IndexEncoder.rand_select(out, all_movies, limit);
-        save_HashMapMovMov(path + "hmmm_" + limit + ".ser", train_movies);
-
-        System.out.printf("---------------\nMovies2: %s\n", train_movies.size());
-        IndexEncoder.filter(train_movies, 0);
-        System.out.printf("---------------\nFILTERED Movies2: %s\n", train_movies.size());
-
-        System.out.printf("---------------\nKeywords (before): %s\n", Movie.GLOB_keyword.size());
-        sarr = Movie.GLOB_keyword.toArray(new String[0]);
-        for (String m : sarr) {
-            if (Movie.GLOB_keyword.getCount(m) < MIN) {
-                Movie.GLOB_keyword.remove(m);
-            }
-        }
-        System.out.printf("---------------\nKeywords (after): %s\n", Movie.GLOB_keyword.size());
-        System.out.printf("---------------\nTitle (before): %s\n", Movie.GLOB_title.size());
-        sarr = Movie.GLOB_title.toArray(new String[0]);
-        for (String m : sarr) {
-            if (Movie.GLOB_title.getCount(m) < MIN) {
-                Movie.GLOB_title.remove(m);
-            }
-        }
-        System.out.printf("---------------\nTitle (after): %s\n", Movie.GLOB_title.size());
-        System.out.printf("---------------\nPlot (before): %s\n", Movie.GLOB_plot.size());
-        sarr = Movie.GLOB_plot.toArray(new String[0]);
-        for (String m : sarr) {
-            if (Movie.GLOB_plot.getCount(m) < MIN) {
-                Movie.GLOB_plot.remove(m);
-            }
-        }
-        System.out.printf("---------------\nPlot (after): %s\n", Movie.GLOB_plot.size());
-
-        for (Movie m : all_movies.keySet()) {
-            GLOB_genre_set.put(m.genre, m.genre.toString());
-        }
-
-        System.out.printf("---------------\nprinting ARFF\n");
-        if (ARFFformat == 0) {
-            out = new File(String.format("%simdb_single_size=%s_MIN=%s_genres=%s.arff", folderPath, limit, MIN, Movie.GLOB_genre.uniqueSet().size()));
-            printARFF2(out, all_movies, limit);
-        } else if(ARFFformat == 1){
-            out = new File(String.format("%simdb_paired_size=%s_MIN=%s_genres=%s.arff", folderPath, limit, MIN, Movie.GLOB_genre.uniqueSet().size()));
-            printARFF(out, all_movies, limit);
-        }else{
-            out = new File(String.format("%simdb_grid_size=%s_MIN=%s_genres=%s.arff", folderPath, limit, MIN, Movie.GLOB_genre.uniqueSet().size()));
-            printARFF3(out, all_movies, limit);
-        }
-        System.out.printf("---------------\nMovies(train): %s\n", train_movies.size());
-//        Movie.rebuildGLOB(movies2);
-        //printMatrix(100, 100);
-        /*
-         TODO: harmonic convergence 
-         B= +/-delta b + B, if better/worse
-         Db = Db*0.9
-        
-         i=UBOUND
-         k=(UBOUND-LBOUND)
-         loop while k>minK
-         decrease by k
-         if too low
-         k=k*0.66
-         loop
-         increase by k
-         if too high
-         break LOOP2
-         */
-
-        double[] B = {5000, 1000, 500, 100, 50, 10, 5, 1};
-        double[] R = {200,};
-        double k;
-        double hi, lo;
-        minFP = Integer.MAX_VALUE;
-        for (double i = 1; i < 90; i = i * 2) {
-            k = 1000 - 0.0001;
-            innerConvergence2(9, 0.0001, i, train_movies, test_movies);
-//            innerConvergence2(1000,50, i, train_movies, test_movies);
-//            innerConvergence2(50,-300, i, train_movies, test_movies);
-        }
-        TP = (int) maxTP;
-        FP = (int) minFP;
-        Metric.b = mi;
-        Metric.r = mj;
-        System.out.println(Metric.toStr());
-        System.out.printf("TP=%4s\tFP=%4s\n", TP, FP);
-        System.out.printf("TP=%s%%\tFP=%s%%\n\n", 100 * TP / (TP + FP), 100 * FP / (TP + FP));
-    }
-
-    private static void innerConvergence(double k, double i, HashMap<Movie, Movie> train_movies, HashMap<Movie, Movie> test_movies) {
+    public static void innerConvergence(double k, double i, HashMap<Movie, Movie> train_movies, HashMap<Movie, Movie> test_movies) {
         double j = 0;
         double n = 1;
         lastFP = Integer.MAX_VALUE;
@@ -378,7 +236,7 @@ public class Matrix {
 //            }
     }
 
-    private static void innerConvergence2(double hi, double lo, double i, HashMap<Movie, Movie> train_movies, HashMap<Movie, Movie> test_movies) {
+    public static void innerConvergence2(double hi, double lo, double i, HashMap<Movie, Movie> train_movies, HashMap<Movie, Movie> test_movies) {
         double j = 0;
         double n = 1;
         double mid, FPmid, FPhi = 99999999, FPlo = 88888888;
@@ -419,7 +277,7 @@ public class Matrix {
 //    {
 //      // calculate the midpoint for roughly equal partition
 //      int imid = midpoint(imin, imax);
-// 
+//
 //      // determine which subarray to search
 //      if (A[imid] < key)
 //        // change min index to search upper subarray
@@ -437,7 +295,7 @@ public class Matrix {
 
     }
 
-    private static void evaluate_plot(double i, double j, HashMap<Movie, Movie> train_movies, HashMap<Movie, Movie> test_movies) {
+    public static void evaluate_plot(double i, double j, HashMap<Movie, Movie> train_movies, HashMap<Movie, Movie> test_movies) {
         Metric.b = i;
         Metric.r = j;
         lastFP = FP;
@@ -460,7 +318,7 @@ public class Matrix {
 //            System.out.printf("\n\t");
     }
 
-    private static void testHypothesis_keyword(HashMap<Movie, Movie> movies) {
+    public static void testHypothesis_keyword(HashMap<Movie, Movie> movies) {
         DecimalFormat df = new DecimalFormat("0");
         double reg, regSum;
         TP = 0;
@@ -534,7 +392,7 @@ public class Matrix {
 //        System.out.printf("TP=%s%%\tFP=%s%%\n\n", 100 * TP / (TP + FP), 100 * FP / (TP + FP));
     }
 
-    private static void testHypothesis(HashMap<Movie, Movie> movies) {
+    public static void testHypothesis(HashMap<Movie, Movie> movies) {
         DecimalFormat df = new DecimalFormat("0");
         double reg, regSum;
         TP = 0;
@@ -575,7 +433,7 @@ public class Matrix {
         }
     }
 
-    private static void testHypothesis_plot(HashMap<Movie, Movie> movies) {
+    public static void testHypothesis_plot(HashMap<Movie, Movie> movies) {
         DecimalFormat df = new DecimalFormat("0");
         double reg, regSum;
         TP = 0;
@@ -649,7 +507,7 @@ public class Matrix {
 //        System.out.printf("TP=%s%%\tFP=%s%%\n\n", 100 * TP / (TP + FP), 100 * FP / (TP + FP));
     }
 
-    private static void printMatrix(int m, int n) {
+    public static void printMatrix(int m, int n) {
         NumberFormat df = new DecimalFormat("##0.000");
         df.setMaximumFractionDigits(3);
         for (int i = 0; i < weight.length && i < m; i++) {
@@ -660,7 +518,7 @@ public class Matrix {
         }
     }
 
-    private static HashMap<Movie, Movie> loadSerial_HashMapMovMov(String serFile) throws FileNotFoundException, IOException, ClassNotFoundException {
+    public static HashMap<Movie, Movie> loadSerial_HashMapMovMov(String serFile) throws FileNotFoundException, IOException, ClassNotFoundException {
         HashMap<Movie, Movie> movies;
         FileInputStream fis = new FileInputStream(serFile);
         ObjectInputStream ois = new ObjectInputStream(fis);
@@ -672,224 +530,12 @@ public class Matrix {
         return movies;
     }
 
-    private static void save_HashMapMovMov(String serFile, HashMap<Movie, Movie> movies) throws IOException, FileNotFoundException {
+    public static void save_HashMapMovMov(String serFile, HashMap<Movie, Movie> movies) throws IOException, FileNotFoundException {
         //save previous work
         FileOutputStream fileOut = new FileOutputStream(serFile);
         ObjectOutputStream oo = new ObjectOutputStream(fileOut);
         oo.writeObject(movies);
         oo.close();
         fileOut.close();
-    }
-
-    private static void printARFF(File out, HashMap<Movie, Movie> all_movies, int limit) {
-        StringBuilder sb = new StringBuilder(1000000);
-        HashMap<String, Integer> index = new HashMap<String, Integer>();
-        int i = 1;
-        String output = "";
-        output += String.format("%% %s\n", new Date());
-        output += String.format("%% Authors: \n");
-        output += String.format("@RELATION imdb \n");
-        Collection<String> genreSet = Movie.GLOB_genre_set.values();
-        System.out.printf("# global keys = %s\n", Movie.GLOB_keyword.size());
-        System.out.printf("# global genres = %s\n", Movie.GLOB_genre.size());
-        System.out.printf("# movies = %s\n", all_movies.size());
-
-        output += String.format("@ATTRIBUTE genre {");
-        for (String s : genreSet) {
-//            index.put(s, i++);
-//            output += String.format("@ATTRIBUTE %s  {0,1}\n", s);
-            output += String.format("\"%s\", ", s);
-        }
-//        output = output.substring(0, output.length() - 2);
-        output += String.format("}\n");
-        sb.append(output);
-        output = "";
-        for (String s : Movie.GLOB_keyword.uniqueSet()) {
-            if (!s.contains("\"")) {
-                index.put(s, i++);
-            }
-
-            sb.append(String.format("@ATTRIBUTE \"%s\" {0,1} \n", s));
-        }
-        sb.append("@DATA\n");
-        Integer idx;
-        ArrayList<Integer> list = new ArrayList(100);
-        for (Movie m : all_movies.keySet()) {
-            sb.append("{");
-
-            sb.append(String.format("0 \"%s\", ", Movie.GLOB_genre_set.get(m.genre)));
-//            for (Genre G : genreSet) {
-//                if (m.genre.contains(G)) {
-//                    sb.append(String.format("%s 1,", index.get(G.name())));
-//                }
-//            }
-            list.clear();
-            i = m.keyword.size();
-            for (String s : m.keyword) {
-                idx = index.get(s);
-                if (idx != null) {
-                    list.add(idx);
-                }
-            }
-            Collections.sort(list);
-            for (Integer s : list) {
-                sb.append(String.format("%s 1", s));
-                if (--i > 0) {
-                    sb.append(", ");
-                }
-            }
-            sb.append("}\n");
-            if (limit-- < 0) {
-                break;
-            }
-        }
-        try {
-            FileOutputStream os = new FileOutputStream(out);
-            os.write(sb.toString().getBytes());
-            os.close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-
-    }
-
-    private static void printARFF2(File out, HashMap<Movie, Movie> all_movies, int limit) {
-        StringBuilder sb = new StringBuilder(1000000);
-        HashMap<String, Integer> index = new HashMap<String, Integer>();
-        int i = 1;
-        String output = "";
-        output += String.format("%% %s\n", new Date());
-        output += String.format("%% Authors: \n");
-        output += String.format("@RELATION imdb \n");
-        Set<Genre> genreSet = Movie.GLOB_genre.uniqueSet();
-        System.out.printf("# global keys = %s\n", Movie.GLOB_keyword.size());
-        System.out.printf("# global genres = %s\n", Movie.GLOB_genre.size());
-        System.out.printf("# movies = %s\n", all_movies.size());
-
-        output += String.format("@ATTRIBUTE genre {");
-        for (Genre s : genreSet) {
-//            index.put(s, i++);
-//            output += String.format("@ATTRIBUTE %s  {0,1}\n", s);
-            output += String.format("\"%s\", ", s.name());
-        }
-//        output = output.substring(0, output.length() - 2);
-        output += String.format("}\n");
-        sb.append(output);
-        output = "";
-        for (String s : Movie.GLOB_keyword.uniqueSet()) {
-            if (!s.contains("\"")) {
-                index.put(s, i++);
-            }
-
-            sb.append(String.format("@ATTRIBUTE \"%s\" {0,1} \n", s));
-        }
-        sb.append("@DATA\n");
-        Integer idx;
-        ArrayList<Integer> list = new ArrayList(100);
-        for (Movie m : all_movies.keySet()) {
-
-            for (Genre G : m.genre) {
-                sb.append("{");
-                sb.append(String.format("0 \"%s\",", G.name()));
-
-                output = "";
-                list.clear();
-                i = m.keyword.size();
-                for (String s : m.keyword) {
-                    idx = index.get(s);
-                    if (idx != null) {
-                        list.add(idx);
-                    }
-                }
-                Collections.sort(list);
-                for (Integer s : list) {//build sparse matrix line
-                    output += (String.format("%s 1", s));
-                    if (--i > 0) {
-                        output += (", ");
-                    }
-                }
-                output += ("}\n");
-                sb.append(output);
-            }
-                if (limit-- < 0) {
-                    break;
-                }
-        }
-        try {
-            FileOutputStream os = new FileOutputStream(out);
-            os.write(sb.toString().getBytes());
-            os.close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-
-    }
-    
-    private static void printARFF3(File out, HashMap<Movie, Movie> all_movies, int limit) {
-        StringBuilder sb = new StringBuilder(1000000);
-        HashMap<String, Integer> index = new HashMap<String, Integer>();
-        int i = 0;
-        String output = "";
-        output += String.format("%% %s\n", new Date());
-        output += String.format("%% Authors: \n");
-        output += String.format("@RELATION imdb \n");
-        Set<Genre> genreSet = Movie.GLOB_genre.uniqueSet();
-        System.out.printf("# global keys = %s\n", Movie.GLOB_keyword.size());
-        System.out.printf("# global genres = %s\n", Movie.GLOB_genre.size());
-        System.out.printf("# movies = %s\n", all_movies.size());
-
-        for (Genre s : genreSet) {
-            index.put(s.name(), i++);
-            output += String.format("@ATTRIBUTE %s  {0,1}\n", s.name());
-        }
-        output += String.format("\n");
-        sb.append(output);
-        output = "";
-        for (String s : Movie.GLOB_keyword.uniqueSet()) {
-            if (!s.contains("\"")) {
-                index.put(s, i++);
-            }
-
-            sb.append(String.format("@ATTRIBUTE \"%s\" {0,1} \n", s));
-        }
-        sb.append("@DATA\n");
-        Integer idx;
-        ArrayList<Integer> list = new ArrayList(100);
-        for (Movie m : all_movies.keySet()) {
-            sb.append("{");
-
-            for (Genre G : genreSet) {
-                if (m.genre.contains(G)) {
-                    sb.append(String.format("%s 1, ", index.get(G.name())));
-                }
-            }
-            list.clear();
-            i = m.keyword.size();
-            for (String s : m.keyword) {
-                idx = index.get(s);
-                if (idx != null) {
-                    list.add(idx);
-                }
-            }
-            Collections.sort(list);
-            for (Integer s : list) {
-                sb.append(String.format("%s 1", s));
-                if (--i > 0) {
-                    sb.append(", ");
-                }
-            }
-            sb.append("}\n");
-            if (limit-- < 0) {
-                break;
-            }
-        }
-        try {
-            FileOutputStream os = new FileOutputStream(out);
-            os.write(sb.toString().getBytes());
-            os.close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-
     }
 }

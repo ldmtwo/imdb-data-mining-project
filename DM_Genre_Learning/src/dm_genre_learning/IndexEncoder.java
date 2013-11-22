@@ -133,9 +133,9 @@ public class IndexEncoder {
                 }
                 count++;
             } else {
+//                count++;
             }
         }
-
         err += String.format("count=" + count);
 
         return err;
@@ -332,21 +332,25 @@ public class IndexEncoder {
 
         return err;
     }
+
     public static HashMap<Movie, Movie> rand_select(File output, Genre genre, HashMap<Movie, Movie> movies, int limit) throws Exception {
         String err = "UNKNOWN";
         if (output.exists()) {
             err = "EXISTS==>" + output;
         }
-        HashMap<Movie, Movie> ret=new HashMap<Movie, Movie>();
+        HashMap<Movie, Movie> ret = new HashMap<Movie, Movie>();
         int count = 0;
         String line;
         BufferedWriter br = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output)));
-        Movie[] mset=movies.keySet().toArray(new Movie[0]);
-        Movie m;int i;
-        while(limit > count && ret.size()<limit) {
-            i=(int)(Math.random()*mset.length);
-            m=mset[i];
-            if(m==null)continue;
+        Movie[] mset = movies.keySet().toArray(new Movie[0]);
+        Movie m;
+        int i;
+        while (limit > count && ret.size() < limit) {
+            i = (int) (Math.random() * mset.length);
+            m = mset[i];
+            if (m == null) {
+                continue;
+            }
             if (m.genre.contains(genre) && isValidMovie(m)) {
                 ret.put(m, m);
                 line = String.format("%s,%s,%s,%s,%s\n".replace("%s", "\"%s\""),
@@ -357,41 +361,46 @@ public class IndexEncoder {
                     break;
                 }
             }
-            mset[i]=null;
+            mset[i] = null;
         }
         br.close();
         err += String.format("count=" + count);
 
         return ret;
-    }public static HashMap<Movie, Movie> rand_select(File output,  HashMap<Movie, Movie> movies, int limit) throws Exception {
+    }
+
+    public static HashMap<Movie, Movie> rand_select(File output, HashMap<Movie, Movie> movies, int limit) throws Exception {
         String err = "UNKNOWN";
         if (output.exists()) {
             err = "EXISTS==>" + output;
         }
-        HashMap<Movie, Movie> ret=new HashMap<Movie, Movie>();
+        HashMap<Movie, Movie> ret = new HashMap<Movie, Movie>();
         int count = 0;
         String line;
         BufferedWriter br = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output)));
-        
-        LinkedList<Movie> mset=new LinkedList(movies.keySet());
-        Movie m;int i;
-        while(limit > count && ret.size()<limit) {
-            i=(int)(Math.random()*mset.size());
-                if (mset.size()<1) {
-                    break;
-                }
-            m=mset.remove(i);
-            if(m==null)continue;
-            if ( isValidMovie(m)) {
+
+        LinkedList<Movie> mset = new LinkedList(movies.keySet());
+        Movie m;
+        int i;
+        while (limit > count && ret.size() < limit) {
+            i = (int) (Math.random() * mset.size());
+            if (mset.size() < 1) {
+                break;
+            }
+            m = mset.remove(i);
+            if (m == null) {
+                continue;
+            }
+            if (isValidMovie(m)) {
                 ret.put(m, m);
                 line = String.format("%s,%s,%s,%s,%s\n".replace("%s", "\"%s\""),
                         m.title, m.year, m.genre, m.keyword, m.plot);
                 br.write(line);
                 count++;
             }
-                if (limit <= count||mset.size()<1) {
-                    break;
-                }
+            if (limit <= count || mset.size() < 1) {
+                break;
+            }
         }
         br.close();
         err += String.format("count=" + count);
@@ -414,12 +423,17 @@ public class IndexEncoder {
     }
 
     private static boolean isValidMovie(Movie m) {
-        return m.keyword.size() > 0 &&m.genre.size() > 0 && m.plot.size() > 0 && m.year > 1800 && m.year < 2013 && m.db_cnt > 3
+        return true
+//        m.keyword.size() > 0 && 
+//                m.genre.size() > 0 && 
+//                m.plot.size() > 0 && 
+//                m.year > 1800 && m.year < 2013 && 
+//                m.db_cnt > 0 
 //                && !(m.genre.contains(Genre.Adult) || m.genre.contains(Genre.Game_Show)
-//                || m.genre.contains(Genre.UNKNOWN) || m.genre.contains(Genre.Talk_Show) || m.genre.contains(Genre.Reality_TV)
-//                || m.genre.contains(Genre.Experimental) || m.genre.contains(Genre.Lifestyle) 
-//                || m.keyword.contains("sex") || m.keyword.contains("orgasm")
-//                )
+                //                || m.genre.contains(Genre.UNKNOWN) || m.genre.contains(Genre.Talk_Show) || m.genre.contains(Genre.Reality_TV)
+                //                || m.genre.contains(Genre.Experimental) || m.genre.contains(Genre.Lifestyle) 
+                //                || m.keyword.contains("sex") || m.keyword.contains("orgasm")
+                //                )
                 ;
     }
 
@@ -444,5 +458,40 @@ public class IndexEncoder {
         br.close();
         err += String.format("count=" + count);
         return err;
+    }
+
+    public static void split(HashMap<Movie, Movie> all_movies,
+            HashMap<Movie, Movie> train_movies,
+            HashMap<Movie, Movie> test_movies,
+            HashMap<Movie, Movie> validate_movies,
+            double d) {
+        LinkedList<Movie> mset=new LinkedList<Movie>(all_movies.keySet());
+        addMoviesToList(mset, (int) (0.05* mset.size()), test_movies);
+        addMoviesToList(mset, (int) (d* mset.size()), train_movies);
+        addMoviesToList(mset, mset.size(), validate_movies);
+        System.out.printf("test: %s\ntrain: %s\nval: %s\n", test_movies.size(), train_movies.size(), validate_movies.size());
+
+    }
+
+    private static void addMoviesToList( LinkedList<Movie> mset, int limit,  HashMap<Movie, Movie> test_movies) {
+        int count = 0;
+        Movie m;
+        int i;
+        while (limit > count ) {
+            i = (int) (Math.random() * mset.size());
+            if (mset.size() < 1) {
+                break;
+            }
+            if((i < 0 || i >= mset.size()))continue;
+            m = mset.remove(i);
+            if (m == null) {
+                continue;
+            }
+            test_movies.put(m, m);
+            count++;
+            if (limit <= count || mset.size() < 1) {
+                break;
+            }
+        }
     }
 }
