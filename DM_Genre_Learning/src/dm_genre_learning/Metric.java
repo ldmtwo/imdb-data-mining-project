@@ -24,8 +24,8 @@ public class Metric {
      */
 
     public static double[] genw;
-    static double b = 19;//importance of higher certainty, more distinctiveness
-    static double r = 4.5;//importance of higher frequency aka more evidence
+    static double logBase = 19;//importance of higher certainty, more distinctiveness
+    static double poweR = 4.5;//importance of higher frequency aka more evidence
     static int[] f = {};
     static double[] c = {};
     static double cmean = 0;//mean
@@ -34,7 +34,7 @@ public class Metric {
     static double a = 0;//logb-sum-f
 
     static public String toStr() {
-        return String.format("b=%s, r=%s", b, r); //To change body of generated methods, choose Tools | Templates.
+        return String.format("b=%s, r=%s", logBase, poweR); //To change body of generated methods, choose Tools | Templates.
     }
 
     public static double[] calc(int[] f_) {
@@ -59,9 +59,14 @@ public class Metric {
             u = u / f.length;
 
             double h;
+//        System.out.printf("%s\n\t%s\n\t%s\n", Arrays.toString(f_), Arrays.toString(c), Arrays.toString(w));
             for (int i = 0; i < f.length; i++) {
 //                h = a * (c[i] - cmean);
-                w[i] = Math.log1p(f[i])* Math.pow(c[i], r)/Math.log(b);
+                w[i] = Math.log1p(f[i])* Math.pow(f[i]/genw[i], 1/7);
+//                w[i] = Math.log1p(f[i])* Math.pow(c[i], poweR)/Math.log1p(logBase);
+//                w[i] = f[i]* Math.pow(2, (Math.log1p(f[i])-a )/Math.log1p(logBase))/genw[i]/ u;
+//        System.out.printf("%s = log(%s) * %s ^ %s / log(%s)\n",
+//                       w[i], f[i]+1, c[i], poweR, logBase+1);
             }
         }
         return w;
@@ -87,7 +92,7 @@ public class Metric {
 //    }
 
     public static void A() {
-        a = Math.log(u) / Math.log(b);
+        a = Math.log1p(u) / Math.log1p(logBase);
     }
 
     public static void sum() {
@@ -128,7 +133,7 @@ public class Metric {
         for (int i = 0; i < f.length; i++) {
             h = a * (c[i] - cmean);
             //w[i] = h*(1+Math.pow(r, h));
-            w[i] = h * (1 + Math.pow(r, h)) / Math.pow(genw[i], 2);
+            w[i] = h * (1 + Math.pow(poweR, h)) / Math.pow(genw[i], 2);
 //            if(w[i]>0)w[i]=(1-t)*w[i]+t*Math.log(w[i]);
 //            else w[i]=0;
         }
@@ -150,8 +155,8 @@ public class Metric {
         for (double i : B) {
             for (double j : R) {
                 System.out.println(Metric.toStr());
-                b = i;
-                r = j;
+                logBase = i;
+                poweR = j;
                 printTest(x);
             }
         }

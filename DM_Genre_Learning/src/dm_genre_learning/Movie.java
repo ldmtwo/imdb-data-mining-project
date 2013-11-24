@@ -15,8 +15,8 @@ import org.apache.commons.collections4.bag.HashBag;
  * @author ldtwo
  */
 public class Movie implements java.io.Serializable {
-
-    public String title;
+    final int hash_;
+    final public String title;
     public int year;
     public static HashBag<Integer> GLOB_year = new HashBag<Integer>();
     public static HashBag<Genre> GLOB_genre = new HashBag<Genre>();
@@ -24,9 +24,9 @@ public class Movie implements java.io.Serializable {
     public static HashBag<String> GLOB_title = new HashBag<String>();
     public static HashBag<String> GLOB_plot = new HashBag<String>();
     public static HashBag<String> GLOB_keyword = new HashBag<String>();
-    public HashSet<Genre> genre = new HashSet<Genre>();
-    public HashSet<String> plot = new HashSet<String>();
-    public HashSet<String> keyword = new HashSet<String>();
+    public HashSet<Genre> genre = new HashSet<Genre>(2);
+    public HashSet<String> plot = new HashSet<String>(10);
+    public HashSet<String> keyword = new HashSet<String>(10);
     public static HashSet<String> bad = new HashSet<String>();
     public int db_cnt = 0;//number of .list files this movie was found
 
@@ -63,6 +63,7 @@ public class Movie implements java.io.Serializable {
     public Movie(String title, int year) {
         this.title = title;
         this.year = year;
+        hash_ = (title).hashCode()*31+year;
         GLOB_year.add(year);
         String[] arr = title.toLowerCase().split("[ /!/\"/#/$/%/&/'/(/)/*/+/,/-///:/;/</=/>/?/@/[/\\/]/^/_/`/{/|/}/~]");
         for (String s : arr) {
@@ -74,8 +75,8 @@ public class Movie implements java.io.Serializable {
         }
     }
 
-    public Movie() {
-    }
+//    public Movie() {
+//    }
     Genre gtemp;
 
     public boolean setGenre(String g) {
@@ -117,13 +118,14 @@ public class Movie implements java.io.Serializable {
 
     @Override
     public int hashCode() {
-        return toString().hashCode();
+        return hash_;
     }
 
     @Override
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     public boolean equals(Object obj) {
-        return this.toString().compareToIgnoreCase(obj.toString()) == 0;
+        Movie m=(Movie) obj;
+        return m.year!=year?false: m.title.compareTo(title)== 0;
     }
 
     @Override
