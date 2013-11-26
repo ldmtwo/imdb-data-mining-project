@@ -12,17 +12,17 @@ import org.apache.commons.math3.stat.inference.ChiSquareTest;
  */
 public class Words {
 
+     private static final long serialVersionUID = 789789789;
     public static final double L2 = Math.log1p(2);
 
     static String[] evaluate(HashMap<Movie, Movie> train_movies, String[] keyArr) {
         double[] kscores = new double[keyArr.length];
-        HashMap<Genre, Set<Movie>> gm = new HashMap<Genre, Set<Movie>>();
-        HashMap<Genre, HashBag<String>> gk = new HashMap<Genre, HashBag<String>>();
-        HashMap<String, Integer> s2i = new HashMap<String, Integer>();
-        HashMap<Genre, Integer> g2i = new HashMap<Genre, Integer>();
-        HashMap< Integer, String> i2s = new HashMap<Integer, String>();
-        HashMap<Integer, Genre> i2g = new HashMap<Integer, Genre>();
-        HashBag<String> bag;
+        HashMap<Genre, Set<Movie>> gm = new HashMap<>();
+        HashMap<Genre, HashBag<String>> gk = new HashMap<>();
+        HashMap<String, Integer> s2i = new HashMap<>();
+        HashMap<Genre, Integer> g2i = new HashMap<>();
+        HashMap< Integer, String> i2s = new HashMap<>();
+        HashMap<Integer, Genre> i2g = new HashMap<>();
         int i = 0, j = 0;
         Genre[] genres = Genre.values();
         for (Genre G : genres) {
@@ -46,7 +46,7 @@ public class Words {
     for (Movie m : train_movies.keySet()) {
         for (Genre g :m.genre) {
             i = g2i.get(g);
-                for (String k : m.keyword) {
+                for (String k : m.words) {
                     j = s2i.get(k);
                     X[i][j]++;
                     gk.get(g).add(k);

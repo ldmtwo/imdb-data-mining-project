@@ -1,6 +1,6 @@
 package dm_genre_learning;
 
-import static dm_genre_learning.IndexEncoder.patternGenre;
+import static dm_genre_learning.DB.patternGenre;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -62,7 +62,7 @@ public class Ranks {
 //                    }
                 }
             }
-        } System.out.format("words %s\n", words.size());
+        } 
         br.close();
     }
 
@@ -124,7 +124,57 @@ public class Ranks {
     }
     static public HashMap<String, Item> filter(Genre genre) throws Exception {
         File[] files = new File("d:\\").listFiles();
-        HashMap<String, Item> words = new HashMap<String, Item>();
+        HashMap<String, Item> words = new HashMap<>();
+        for (File f : files) {
+            if (!f.getName().toLowerCase().contains(".chisq")) {
+                continue;
+            }
+            mergeRanks(f, words);
+        }
+        if (words.size() < 1) {
+            return words;
+        }
+        Item[] items = words.values().toArray(new Item[0]);
+        Arrays.sort(items, new Comparator<Item>() {
+
+            public int compare(Item o1, Item o2) {
+                return o1.compareTo(o2);
+            }
+        });
+        Item item;
+        String[] keys = words.keySet().toArray(new String[0]);
+        for (String k : keys) {
+            item = words.get(k);
+            if (item.merit < items[(int)(items.length *GOOD_PERCENTAGE-1)].merit ) {
+                words.remove(k);
+            }
+        }
+        for (Genre g : Genre.values()) {
+            words.remove(g.name());
+        }
+//        for (String k : keys) {
+//            item=words.get(k);
+//            if(item.merit<1||item.cnt<3)words.remove(k);
+//        }
+//        FileOutputStream os = new FileOutputStream("d:\\keywords." + genre.name(), false);
+//        items = words.values().toArray(new Item[0]);
+//        Arrays.sort(items, new Comparator<Item>() {
+//
+//            public int compare(Item o1, Item o2) {
+//                return o1.compareTo(o2);
+//            }
+//        });
+//        for (Item i : items) {
+//            System.out.println(i);
+//            os.write(i.name.getBytes());
+//            os.write("\n".getBytes());
+//        }
+            return words;
+
+    }
+    static public HashMap<String, Item> mergeAll(Genre genre) throws Exception {
+        File[] files = new File("d:\\").listFiles();
+        HashMap<String, Item> words = new HashMap<>();
         for (File f : files) {
             if (!f.getName().toLowerCase().startsWith(genre.name().toLowerCase() + ".")) {
                 continue;

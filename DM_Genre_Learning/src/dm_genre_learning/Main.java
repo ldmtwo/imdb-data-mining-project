@@ -57,13 +57,13 @@ public class Main {
             System.out.printf("---------------\nLoaded in %s seconds!\n\n%s\n", (t1 - t0) / 1000, status);
         } catch (Exception exception) {
 
-            status = IndexEncoder.storeMovies(in[0], out, movies);
+            status = DB.storeMovies(in[0], out, movies);
             System.out.printf("Movies: %s\n", movies.size());
-            status += IndexEncoder.storeGenres(in[1], out, movies);
+            status += DB.storeGenres(in[1], out, movies);
             System.out.printf("Movies: %s\n", movies.size());
-            status += IndexEncoder.storeKeywords(in[2], out, movies);
+            status += DB.storeKeywords(in[2], out, movies);
             System.out.printf("Movies: %s\n", movies.size());
-            status += IndexEncoder.storePlots(in[3], out, movies);
+            status += DB.storePlots(in[3], out, movies);
             //save previous work
             FileOutputStream fileOut = new FileOutputStream("d:\\movies.ser");
             ObjectOutputStream oo = new ObjectOutputStream(fileOut);
@@ -77,9 +77,9 @@ public class Main {
 
         System.out.printf("---------------\nMovies: %s\n", movies.size());
 
-        IndexEncoder.filter(movies, 0);
+        DB.filter(movies);
         if (genre != null) {
-            IndexEncoder.filterByGenre(movies, 0, genre);
+            DB.filterByGenre(movies, 0, genre);
             Movie.rebuildGLOB(movies);
         }
         System.out.printf("---------------\nFILTERED Movies: %s\n", movies.size());
@@ -88,16 +88,14 @@ public class Main {
         String strg = ((genre != null) ? "given%" + ("" + genre).toUpperCase() + "_" : "");
         for (int limit = 100; limit <= 1000000; limit *= 100) {
             for (Genre g : Genre.values()) {
-                k = IndexEncoder.size(g, movies, limit);
+                k = DB.size(g, movies, limit);
                 System.out.printf("---------------\nPrinting movies for %s: %s\n", g, k);
                 out = new File(folderPath + strg + g + "_limit=" + k + ".csv");
-                IndexEncoder.select(out, g, movies, limit);
+                DB.select(out, g, movies, limit);
             }
         }
         writeStats(folderPath, strg + "genre", Movie.GLOB_genre);
-        writeStats(folderPath, strg + "keywords", Movie.GLOB_keyword);
-        writeStats(folderPath, strg + "plot", Movie.GLOB_plot);
-        writeStats(folderPath, strg + "title", Movie.GLOB_title);
+        writeStats(folderPath, strg + "keywords", Movie.GLOB_word);
         writeStats(folderPath, strg + "year", Movie.GLOB_year);
     }
 
@@ -108,7 +106,7 @@ public class Main {
             k = Math.min(limit, b.size());
             System.out.printf("---------------\nPrinting stats for %s: %s\n", type, k);
             out = new File(folderPath + "_FREQENCIES_" + type + "_limit=" + k + ".csv");
-            IndexEncoder.writeHistogram(out, b, limit);
+            DB.writeHistogram(out, b, limit);
             if (k != limit) {
                 break;
             }

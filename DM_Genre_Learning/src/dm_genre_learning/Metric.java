@@ -62,8 +62,8 @@ public class Metric {
 //        System.out.printf("%s\n\t%s\n\t%s\n", Arrays.toString(f_), Arrays.toString(c), Arrays.toString(w));
             for (int i = 0; i < f.length; i++) {
 //                h = a * (c[i] - cmean);
-                w[i] = Math.log1p(f[i])* Math.pow(f[i]/genw[i], 1/7);
-//                w[i] = Math.log1p(f[i])* Math.pow(c[i], poweR)/Math.log1p(logBase);
+//                w[i] = Math.log1p(f[i])* Math.pow(f[i]/genw[i], 1/7);
+                w[i] = Math.log1p(f[i])* Math.pow(c[i], poweR)/Math.log1p(logBase);
 //                w[i] = f[i]* Math.pow(2, (Math.log1p(f[i])-a )/Math.log1p(logBase))/genw[i]/ u;
 //        System.out.printf("%s = log(%s) * %s ^ %s / log(%s)\n",
 //                       w[i], f[i]+1, c[i], poweR, logBase+1);
